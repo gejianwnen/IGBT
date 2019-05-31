@@ -1,0 +1,57 @@
+%% clear 
+clc;
+clear all;
+close all
+
+
+%% laod data
+% Thermal Overstress Aging with Square Signal at gate
+file_folder = 'data\\Thermal Overstress Aging with Square Signal at gate\\';
+file_name = 'april22nd-23rdIgbtIRCG40BC30kd-A17.mat';
+load([file_folder file_name]);
+
+%% extract peak 
+
+transient = struct([]);
+collectorEmitterVoltage_peak = zeros(length(measurement.transient));
+for i = 1:length(measurement.transient)
+
+    % single table for each dt
+%     single_df = struct([]);
+    single_df.gateSignalVoltage = measurement.transient(i).timeDomain.gateSignalVoltage';
+    single_df.gateEmitterVoltage = measurement.transient(i).timeDomain.gateEmitterVoltage';
+    single_df.collectorEmitterVoltage = measurement.transient(i).timeDomain.collectorEmitterVoltage';
+    single_df.collectorEmitterCurrentSingal = measurement.transient(i).timeDomain.collectorEmitterCurrentSignal';
+    
+%     get the transient curve
+    len = length(single_df.gateSignalVoltage);
+    flag = single_df.gateSignalVoltage(1:len-8) - single_df.gateSignalVoltage(9:len);
+    [m,id] = max(flag);
+    if(m<5)
+        fprintf('there is something wrong with %d, whose max value is %f',id,m);
+    end
+    single_df.gateSignalVoltage = single_df.gateSignalVoltage(id:id+1023);
+    single_df.gateEmitterVoltage = single_df.gateEmitterVoltage(id:id+1023);
+    single_df.collectorEmitterVoltage = single_df.collectorEmitterVoltage(id:id+1023);
+    single_df.collectorEmitterCurrentSingal = single_df.collectorEmitterCurrentSingal(id:id+1023);
+%     save file
+    df = struct2table(single_df);
+    writetable(df,[file_folder 'transient_timeDomain_cut\\' num2str(i) '.csv']);
+    
+%     get peak of collectorEmitterVoltage
+    collectorEmitterVoltage_peak(i) = max(single_df.collectorEmitterVoltage);
+
+end
+
+num = 1:length(measurement.transient);
+peak_df = table(num,collectorEmitterVoltage_peak);
+writetable(peak_df, [file_folder ''])
+
+
+
+
+
+
+
+
+
